@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:oauth="http://www.mulesoft.org/schema/mule/oauth"
+	xmlns:oauth2-provider="http://www.mulesoft.org/schema/mule/oauth2-provider" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:sharepoint="http://www.mulesoft.org/schema/mule/sharepoint" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/sharepoint http://www.mulesoft.org/schema/mule/sharepoint/current/mule-sharepoint.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/oauth2-provider http://www.mulesoft.org/schema/mule/oauth2-provider/current/mule-oauth2-provider.xsd
+http://www.mulesoft.org/schema/mule/oauth http://www.mulesoft.org/schema/mule/oauth/current/mule-oauth.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="ed9e2cd8-3a9e-47f8-99d0-34b29a229fec" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="12355fca-af62-46e8-a9d5-15e0202de058" />
+	<sharepoint:sharepoint-online-config name="Sharepoint_Authorization_code" doc:name="Sharepoint Sharepoint online" doc:id="adf658e1-b35c-4dc7-9540-102e0e5c7c83" >
+		<sharepoint:oauth-authorization-code-connection siteUrl="https://v7ldn-my.sharepoint.com" >
+			<sharepoint:oauth-authorization-code consumerKey="27a68346-ddd1-4d7f-9d2e-e2a86dd41cae" consumerSecret="~OI8Q~fTKVrE7qJEiV54NryqcR3EpTOQ1KN-bbRY" authorizationUrl="https://login.microsoftonline.com/fa68f7c0-d3f5-499d-84b2-dfbf01878860/oauth2/v2.0/authorize" accessTokenUrl="https://login.microsoftonline.com/fa68f7c0-d3f5-499d-84b2-dfbf01878860/oauth2/v2.0/token" scopes="https://v7ldn-my.sharepoint.com/.default offline_access" resourceOwnerId="5a66090b-624a-488b-9a9a-8ff3a5c9b675/v7ldn-my.sharepoint.com@fa68f7c0-d3f5-499d-84b2-dfbf01878860"/>
+			<sharepoint:oauth-callback-config listenerConfig="HTTP_Listener_config1" callbackPath="/callback" authorizePath="/authorize" externalCallbackUrl="https://localhost:8082/callback"/>
+			<sharepoint:oauth-store-config objectStore="Object_store1" />
+		</sharepoint:oauth-authorization-code-connection>
+	</sharepoint:sharepoint-online-config>
+	<http:listener-config name="HTTP_Listener_config1" doc:name="HTTP Listener config" doc:id="eaf729d4-d291-4298-965d-a37cc3362497" >
+		<http:listener-connection protocol="HTTPS" host="0.0.0.0" port="8082" tlsContext="TLS_Context">
+		</http:listener-connection>
+	</http:listener-config>
+	<tls:context name="TLS_Context" doc:name="TLS Context" doc:id="59279ffd-3208-4d77-bd47-4fe082ca89f0" >
+		<tls:key-store type="pkcs12" path="C:\Users\dev\AnypointStudio\studio-workspace\sharepoint\src\main\resources\keystore\server-dev-keystore.p12" alias="server" keyPassword="password" password="password"/>
+	</tls:context>
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="209a1c4f-1615-473c-a99f-fda90b6fe6aa" />
+	<os:object-store name="Object_store1" doc:name="Object store" doc:id="219b8273-9e33-4b9c-bf3c-e2f03d192419" />
+	<flow name="sharepointFlow-FileUpload" doc:id="1b63d703-ba34-462d-b183-cc8177c6a3ec" >
+		<http:listener doc:name="Listener" doc:id="8af719ac-0af9-4f74-b53a-5e5f752c315d" config-ref="HTTP_Listener_config" path="/uploadFile"/>
+		<sharepoint:folder-create doc:name="Folder create" doc:id="4ed7a6a6-3061-4509-b837-384c46cbb47e" config-ref="Sharepoint_Authorization_code" url="/Documents/mathi"/>
+		<file:read doc:name="Read" doc:id="42eb5c39-d665-45f7-b0b5-a11db7ab550c" config-ref="File_Config" path="C:\Users\dev\Documents\test.yaml">
+			<ee:repeatable-file-store-stream bufferUnit="MB" />
+		</file:read>
+		<sharepoint:file-add doc:name="File add" doc:id="cd79a0ed-044c-4e84-ba46-822edacdfbe4" config-ref="Sharepoint_Authorization_code" fileServerRelativeUrl="/Documents/mathi/record.yaml" overwrite="true">
+			<sharepoint:file-content-stream ><![CDATA[#[payload]]]></sharepoint:file-content-stream>
+		</sharepoint:file-add>
+		<ee:transform doc:name="Transform Message" doc:id="ed2b2400-2081-43dc-b1d6-0f75d6ae3ff3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<sharepoint:sharepoint-online-config name="Sharepoint_OAuth_Client_Credentials" doc:name="Sharepoint Sharepoint online" doc:id="2c729fbd-cfea-4dd8-8d06-d8aec9e1073c" >
+		<sharepoint:oauth-client-credentials-connection siteUrl="https://v7ldn-my.sharepoint.com" clientId="27a68346-ddd1-4d7f-9d2e-e2a86dd41cae" tokenUrl="https://login.microsoftonline.com/fa68f7c0-d3f5-499d-84b2-dfbf01878860/oauth2/v2.0/token" keyStoreAlias="server" keyStorePath="C:\Users\dev\AnypointStudio\studio-workspace\sharepoint\src\main\resources\keystore\server-dev-keystore.p12" keyStorePassword="password" keyStoreType="PKCS12" scope="https://v7ldn-my.sharepoint.com/.default" objectStore="Object_store"/>
+	
+</sharepoint:sharepoint-online-config>
+	<flow name="sharepointFlow-FileGetContent" doc:id="d3cbd8a1-304a-40f6-bbbd-c7d9fdaa17e8" >
+		<http:listener doc:name="Listener" doc:id="2f3d8ae2-3d12-437d-9fd3-28e5d736ca62" config-ref="HTTP_Listener_config" path="/getContent"/>
+		<sharepoint:file-get-content doc:name="File get content" doc:id="d3ba7336-5532-4d18-b803-0b8bdc036424" config-ref="Sharepoint_Authorization_code" fileServerRelativeUrl="/Documents/mathi/record.yaml"/>
+		<logger level="INFO" doc:name="Logger" doc:id="bbadd47d-2a44-46aa-b5c8-d20307d3c092" message="Records are #[payload]"/>
+	</flow>
+	<flow name="sharepointFlow" doc:id="9e32db01-6d6d-43cd-a6a8-b36fd40390d8" >
+		<http:listener doc:name="Listener" doc:id="f40e54d8-d745-43d7-b277-518d377e84b1" config-ref="HTTP_Listener_config" path="/deleteFolder"/>
+		<sharepoint:folder-delete doc:name="Folder delete" doc:id="03308e7a-6080-4758-9e6c-4a5244b78074" config-ref="Sharepoint_Authorization_code" url="/Documents/mathi"/>
+	</flow>
+</mule>
